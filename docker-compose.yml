@@ -1,0 +1,25 @@
+version: '3'
+services:
+  myjenkins:
+    image: "jenkins/jenkins:lts"
+    ports:
+    - "8080:8080"
+    - "50000:50000"
+    volumes:
+    - './jenkins_home:/var/jenkins_home'
+
+  mygitlab:
+    image: "gitlab/gitlab-ce:10.5.1-ce.0"
+    restart: always
+    ports:
+      - '80:80'
+      - '443:443'
+
+    volumes:
+      - './gitlab/etc/gitlab:/etc/gitlab'
+      - './gitlab/log/gitlab:/var/log/gitlab'
+      - './gitlab/opt/gitlab:/var/opt/gitlab'
+
+
+#dont put hostname attribute in here or you'll not be able to communicate with the network
+# do not use gitlab LTS either!!! they changed a setting for webhooks and it broke them.

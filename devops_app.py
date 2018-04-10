@@ -39,10 +39,10 @@ def main():
 
     db = understand.open("./understandDB/simple.udb")
 
-    ents = db.ents()
+    entities = db.ents()
 
 # print characteristics of unsorted entities
-    for ent in ents:
+    for ent in entities:
         print(ent.name())
         print("Longname: " + ent.longname())
         print("Parameters: ", ent.parameters())

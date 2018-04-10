@@ -17,17 +17,6 @@ from pathlib import Path
 
 def main():
 
-    #Gitlab REPOs
-    # for arg in args:
-    #     if arg != 'tomahawk':
-    #         sys.stderr.write('arg needs to be "tomahawk"')
-    #
-    # mygitlab = gitlab.Gitlab('http://0.0.0.0:80', private_token='QvsMuiYs9SziromWuX-g')
-    #
-    # projects = mygitlab.projects.list()
-    # print (args)
-
-
     # Access Token
     mygithub = Github("d566ce209207556c3dcedb2eff139a63c5cd8a9e")
 
@@ -35,7 +24,7 @@ def main():
     repo_urls = list()
     count = 0
 
-    # Then play with your Github objects:
+    #Get repos
     for repo in mygithub.get_user().get_repos():
         repo_names.append(repo.name)
         repo_urls.append(repo.html_url)

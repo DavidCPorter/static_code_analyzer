@@ -41,7 +41,7 @@ class MyPrompt(Cmd):
             return
         if validate_cloned(repo_objects[arg0-1]):
             matched_commits = search_commits(repo_objects[arg0-1], args[1])
-            key = randint(1, 1000)
+            key = randint(100, 1000)
             #commit_list contains commit sets for each query of repo
             commit_lists[key] = matched_commits
             print("\n\nRESULT KEY = %s" %key )
@@ -93,8 +93,8 @@ class MyPrompt(Cmd):
             print("\n\nCOMMIT_DICT:")
             print(file_prefix_dict)
             print("\n\nInstruction\nStep 4: Next step is to view the parameter changes on all functions and methods.\n TYPE: compare <index (nonzero-based..i.e. <1> is the first index) of COMMIT_DICT key (commit message) to compare>\n ")
-            # if count == 1:
-            #     break
+            if count == 1:
+                break
 
 
     def do_compare(self, index):
@@ -197,12 +197,13 @@ def clone_repos(index):
 
 def search_commits(repo, keyword):
     commitMatchDict = {}
-    for commit in repo.get_commits():
-        message = commit.raw_data['commit']['message']
+    pdb.set_trace()
+    commits = repo.get_commits()
+    for commit in commits:
+        message = commit.commit.message
         if keyword in message:
             if commit.parents == None:
                 continue
-            #not 100% sure first index is what we want
             commitMatchDict[message] = (commit.sha, commit.parents[0].sha)
 
     return commitMatchDict

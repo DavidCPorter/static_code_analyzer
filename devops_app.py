@@ -80,7 +80,7 @@ class MyPrompt(Cmd):
         file_prefix_dict[commit_message] = ('./projects/%sbefore.udb'%file_prefix, './projects/%safter.udb'%file_prefix)
 
         f = open('%s.sh' %file_prefix,'w' )
-        f.write('cd projects\ncd %s\ngit checkout %s\nund create -languages java ../%sbefore.udb\nund add -watch off -lang java ./ ../%sbefore.udb\nund analyze -quiet ../%sbefore.udb' %(repo.name, before, file_prefix, file_prefix, file_prefix))
+        f.write('cd projects\ncd %s\ngit checkout %s\nund create -languages java ../%sbefore.udb\nund add -lang java ./ ../%sbefore.udb\nund analyze -quiet ../%sbefore.udb' %(repo.name, before, file_prefix, file_prefix, file_prefix))
         f.close()
         create_udb(file_prefix)
         #need to remove .sh file
@@ -88,7 +88,7 @@ class MyPrompt(Cmd):
         print("FIRST UDB CREATED")
 
         f = open('%s.sh' %file_prefix,'w' )
-        f.write('cd projects\n cd %s\ngit checkout %s\nund create -languages java ../%safter.udb\nund add -watch off -lang java ./ ../%safter.udb\nund analyze -quiet ../%safter.udb' %(repo.name, after, file_prefix, file_prefix, file_prefix))
+        f.write('cd projects\n cd %s\ngit checkout %s\nund create -languages java ../%safter.udb\nund add -lang java ./ ../%safter.udb\nund analyze -quiet ../%safter.udb' %(repo.name, after, file_prefix, file_prefix, file_prefix))
         f.close()
         create_udb(file_prefix)
 
@@ -98,52 +98,19 @@ class MyPrompt(Cmd):
         print("\n\nInstruction\nStep 4: Next step is to view the parameter changes on all functions and methods.\n TYPE: compare <index (nonzero-based..i.e. <1> is the first index) of COMMIT_DICT key (commit message) to compare>\n ")
 
 
-        # for commit_pair in commits:
-        #     count+=1
-        #     pair = commits[commit_pair]
-        #     #parent of matched commit
-        #     before = pair[1]
-        #     #matched commit
-        #     after = pair[0]
-        #     file_prefix = repo.name
-        #     file_prefix = file_prefix+str(count)
-        #     file_prefix_dict[commit_pair] = ('./projects/%sbefore.udb'%file_prefix, './projects/%safter.udb'%file_prefix)
-        #
-        #     f = open('%s.sh' %file_prefix,'w' )
-        #     f.write('cd projects\ncd %s\ngit checkout %s\nund create -languages java ../%sbefore.udb\nund add -lang java ./ ../%sbefore.udb\nund analyze ../%sbefore.udb\n' %(repo.name, before, file_prefix, file_prefix, file_prefix))
-        #     f.close()
-        #     create_udb(file_prefix)
-        #     #need to remove .sh file
-        #
-        #     print("FIRST UDB CREATED")
-        #
-        #     f = open('%s.sh' %file_prefix,'w' )
-        #     f.write('cd projects\n cd %s\ngit checkout %s\nund create -languages java ../%safter.udb\nund add -lang java ./ ../%safter.udb\nund analyze ../%safter.udb' %(repo.name, after, file_prefix, file_prefix, file_prefix))
-        #     f.close()
-        #     create_udb(file_prefix)
-        #
-        #     print("SECOND UDB CREATED")
-        #     print("\n\nCOMMIT_DICT:")
-        #     print(file_prefix_dict)
-        #     print("\n\nInstruction\nStep 4: Next step is to view the parameter changes on all functions and methods.\n TYPE: compare <index (nonzero-based..i.e. <1> is the first index) of COMMIT_DICT key (commit message) to compare>\n ")
-        #     if count == 1:
-        #         break
-        #
 
     def do_compare(self, args):
         #args are either metrics or parameters, with metrics taking a csvList as a thrid parameter
         count = 0
-        args = args.split(" ")
-        arg0 = args[0]
         file_paths_list = list(file_prefix_dict.values())
-        if arg0 == '-metrics':
+        if args == '-metrics':
             # arg1 = args[1].split(",")
             for single_pairOfCommitsPaths in file_paths_list:
-                compare_metrics(single_pairOfCommitsPaths, args[1])
+                compare_function_metrics(single_pairOfCommitsPaths[0], single_pairOfCommitsPaths[1])
                 print("your comparison xml files (metrics<num>.xml) are now available in your current directory\n\nYou may restart the process from step 1 if you want more analyses")
             return
 
-        elif arg0 == '-parameters':
+        elif args == '-parameters':
             for single_pairOfCommitsPaths in file_paths_list:
                 count+=1
                 compare_parameters(single_pairOfCommitsPaths[0], single_pairOfCommitsPaths[1], count)
@@ -205,7 +172,7 @@ def compare_function_metrics (udb_before, udb_after):
     dbBefore = understand.open(udb_before)
     dbAfter = understand.open(udb_after)
 
-    # the entities of database, have the parameter of function 
+    # the entities of database, have the parameter of function
     entsBefore = dbBefore.ents("function,method,procedure")
     entsAfter = dbAfter.ents("function,method,procedure")
 
@@ -219,13 +186,13 @@ def compare_function_metrics (udb_before, udb_after):
       for j in entsAfter:
          if i == j:
             metrics_before = i.metric(complexity_metrics)
-            metrics_after = j.metric(complexity_metrics)  
+            metrics_after = j.metric(complexity_metrics)
             k = 0
             for metrics_element in metrics_before:
               if metrics_element is not None:
                  if metrics_after[complexity_metrics[k]] - metrics_before[complexity_metrics[k]] != 0 :
                      method = etree.SubElement(doc,"method", name = str(i))
-                     change = etree.SubElement(method,"change") 
+                     change = etree.SubElement(method,"change")
                      parameter = etree.SubElement(change, complexity_metrics[k], before = str(metrics_before[complexity_metrics[k]]), after = str(metrics_after[complexity_metrics[k]])).text = str(metrics_after[complexity_metrics[k]] - metrics_before[complexity_metrics[k]])
                      print (i," ",complexity_metrics[k], " Change: ", metrics_after[complexity_metrics[k]] - metrics_before[complexity_metrics[k]], sep="")
                      k = k + 1
@@ -233,7 +200,7 @@ def compare_function_metrics (udb_before, udb_after):
 
 
     tree = etree.ElementTree(root)
-    tree.write("functionMetricsChange.xml") 
+    tree.write("functionMetricsChange.xml")
 
     dbBefore.close()
     dbAfter.close()

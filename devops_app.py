@@ -200,6 +200,48 @@ def compare_parameters(udb_before, udb_after, count):
     dbAfter.close()
 
 
+def compare_function_metrics (udb_before, udb_after):
+    # Open Database
+    dbBefore = understand.open(udb_before)
+    dbAfter = understand.open(udb_after)
+
+    # the entities of database, have the parameter of function 
+    entsBefore = dbBefore.ents("function,method,procedure")
+    entsAfter = dbAfter.ents("function,method,procedure")
+
+    root = etree.Element("root")
+    doc = etree.SubElement(root, "doc")
+
+    # create list of metric aspects, here I choose three terms: Cyclomatic","MaxNesting","Essential"
+    complexity_metrics = ["Cyclomatic","MaxNesting","Essential"]
+
+    for i in entsBefore:
+      for j in entsAfter:
+         if i == j:
+            metrics_before = i.metric(complexity_metrics)
+            metrics_after = j.metric(complexity_metrics)  
+            k = 0
+            for metrics_element in metrics_before:
+              if metrics_element is not None:
+                 if metrics_after[complexity_metrics[k]] - metrics_before[complexity_metrics[k]] != 0 :
+                     method = etree.SubElement(doc,"method", name = str(i))
+                     change = etree.SubElement(method,"change") 
+                     parameter = etree.SubElement(change, complexity_metrics[k], before = str(metrics_before[complexity_metrics[k]]), after = str(metrics_after[complexity_metrics[k]])).text = str(metrics_after[complexity_metrics[k]] - metrics_before[complexity_metrics[k]])
+                     print (i," ",complexity_metrics[k], " Change: ", metrics_after[complexity_metrics[k]] - metrics_before[complexity_metrics[k]], sep="")
+                     k = k + 1
+
+
+
+    tree = etree.ElementTree(root)
+    tree.write("functionMetricsChange.xml") 
+
+    dbBefore.close()
+    dbAfter.close()
+
+
+
+
+
 def create_udb(arg):
     with open('%s.sh' %arg, 'rb') as file:
         script = file.read()

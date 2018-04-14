@@ -46,7 +46,7 @@ class MyPrompt(Cmd):
             commit_lists[key] = matched_commits
             print("RESULT KEY = %s" %key )
             print(matched_commits)
-            print("Step 3: Now you can analyze your commit changes\nType: analyze <repo_number> <RESULT KEY>\nthis will produce analyzed udb files)
+            print("Step 3: Now you can analyze your commit changes\nType: analyze <repo_number> <RESULT KEY>\nthis will produce analyzed udb files")
             return
         else:
             print("repo not located, please redo step 1")

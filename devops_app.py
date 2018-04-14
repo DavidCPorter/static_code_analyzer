@@ -11,9 +11,14 @@ from pathlib import Path
 import pdb
 from cmd import Cmd
 from random import *
-
-
+import re
+import lxml.etree as etree
+#file prefix_dict allows user to access udb files for comparison. key = commit_message and value is tuple of udb file paths. This will store all the udb file paths for each search analysis so that they can compare them with our algorithm.
+file_prefix_dict = {}
 repo_objects = list()
+#commit_list contains commit sets for each query of repo
+#user required to use repo number and random key to access commit_list data
+#user can store many query results for different repos in this dictionary for each session
 commit_lists = {}
 
 
@@ -37,10 +42,11 @@ class MyPrompt(Cmd):
         if validate_cloned(repo_objects[arg0-1]):
             matched_commits = search_commits(repo_objects[arg0-1], args[1])
             key = randint(1, 1000)
+            #commit_list contains commit sets for each query of repo
             commit_lists[key] = matched_commits
             print("RESULT KEY = %s" %key )
             print(matched_commits)
-            print("how would you like to analyze?")
+            print("Step 3: Now you can analyze your commit changes\nType: analyze <repo_number> <RESULT KEY>\nthis will produce analyzed udb files)
             return
         else:
             print("repo not located, please redo step 1")
@@ -67,28 +73,78 @@ class MyPrompt(Cmd):
             after = pair[0]
             file_prefix = repo.name
             file_prefix = file_prefix+str(count)
+            file_prefix_dict[commit_pair] = ('./projects/%sbefore.udb'%file_prefix, './projects/%safter.udb'%file_prefix)
+
             f = open('%s.sh' %file_prefix,'w' )
             f.write('cd projects\ncd %s\ngit checkout %s\nund create -languages java ../%sbefore.udb\nund add -lang java ./ ../%sbefore.udb\nund analyze ../%sbefore.udb\n' %(repo.name, before, file_prefix, file_prefix, file_prefix))
             f.close()
             create_udb(file_prefix)
+            #need to remove .sh file
+
             print("FIRST UDB CREATED")
-            # time.sleep(3)
 
             f = open('%s.sh' %file_prefix,'w' )
             f.write('cd projects\n cd %s\ngit checkout %s\nund create -languages java ../%safter.udb\nund add -lang java ./ ../%safter.udb\nund analyze ../%safter.udb' %(repo.name, after, file_prefix, file_prefix, file_prefix))
             f.close()
             create_udb(file_prefix)
+
             print("SECOND UDB CREATED")
-            # time.sleep(3)
+            print(file_prefix_dict)
+            print("\nStep 4: Next step is to view the parameter changes on all functions and methods.\n TYPE: compare <index of dictionary item (commit) to compare>\n ")
+            # if count == 1:
+            #     break
 
 
-    # def do_compare(self):
-
+    def do_compare(self, index):
+        file_paths = list(file_prefix_dict.values())
+        udb_before = file_paths[int(index)-1][0]
+        udb_after = file_paths[int(index)-1][1]
+        compare_udbs(udb_before, udb_after)
+        print("your comparison xml file (parameterChange.xml) is now available in your current directory\n\nYou may restart the process from step 1 if you want more analyses")
 
     def do_quit(self, args):
         """Quits the program."""
         print ("Quitting.")
         raise SystemExit
+
+#algo here:
+def sortKeyFunc(ent):
+    return str.lower(ent.longname())
+
+def compare_udbs(udb_before, udb_after):
+    # Open Database
+    dbBefore = understand.open(udb_before)
+    dbAfter = understand.open(udb_after)
+
+    root = etree.Element("root")
+    doc = etree.SubElement(root, "doc")
+
+
+
+    entsBefore = dbBefore.ents("function,method,procedure")
+    #entsBefore = dbBefore.ents()
+    entsAfter = dbAfter.ents("function,method,procedure")
+    #entsAfter = dbAfter.ents()
+
+
+    for funcB in sorted(entsBefore,key = sortKeyFunc):
+      for funcA in sorted(entsAfter,key = sortKeyFunc):
+        if funcB.name() == funcA.name():
+          method = etree.SubElement(doc,"method", name = funcB.name())
+          #print("Haha, these two equal!")
+          for paramA in funcA.ents("Define","Parameter"):
+            for paramB in funcB.ents("Define","Parameter"):
+
+               if paramA == paramB and paramA.type() != paramB.type():
+
+                  change = etree.SubElement(method,"change")
+                  parameter = etree.SubElement(change, "parameter", oldtype = paramB.type(), newtype = paramA.type()).text = str(paramB)
+
+    tree = etree.ElementTree(root)
+    tree.write("parameterChange.xml")
+
+    dbBefore.close()
+    dbAfter.close()
 
 
 def create_udb(arg):
@@ -96,7 +152,6 @@ def create_udb(arg):
         script = file.read()
     rc = call(script, shell=True)
     print("udb file created")
-    pdb.set_trace()
     return
 
 def validate_cloned(repo):
@@ -118,6 +173,7 @@ def get_repos():
         repo_objects.append(repo)
         count+=1
         print(str(count)+"->"+repo.name)
+        print("Instruction:\nType: choose <repo_number>\nthis will clone the repo locally or tell you it's already cloned")
 
 
 def clone_repos(index):
@@ -126,11 +182,13 @@ def clone_repos(index):
     checkdir = Path("./projects/%s" % repo.name)
     if validate_cloned(repo):
         print("%s already cloned" %repo.name)
+        print('Step2: search the commit metadata\nType: search <repo_number> <inLine keyword>')
         return
     else:
         print("cloning %s" %repo.name)
         Repo.clone_from(repo.html_url, "./projects/%s" % repo.name)
         print('done cloning %s' %repo.name)
+        print('Step2: search the commit metadata\nType: search <repo_number> <inLine keyword>')
         return
 
     #find issue-related commits
@@ -148,10 +206,6 @@ def search_commits(repo, keyword):
     return commitMatchDict
 
 
-
-
-
-
     #
     # for
     #
@@ -167,7 +221,7 @@ def search_commits(repo, keyword):
 
 
 if __name__ == '__main__':
-    print("instructions: ")
+    print("instructions:\nYou will be prompted through a series of steps\nStep1: choose repository to analyze\nStep2: search repositories commit metadata using keyword search to retrieve a list of commits and their parent commits that match the keyword search\nStep3: analyze the commits entity data using Understand API\nStep4: compare the entity data to learn what method and function parameter changes occured in the repo based on your metadata search at\n\nAt any point in the process you can redo any of the previous steps if you'd like by simply running those commands again")
     get_repos()
     prompt = MyPrompt()
     prompt.prompt = '> '

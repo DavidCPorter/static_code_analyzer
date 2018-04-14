@@ -44,9 +44,10 @@ class MyPrompt(Cmd):
             key = randint(1, 1000)
             #commit_list contains commit sets for each query of repo
             commit_lists[key] = matched_commits
-            print("RESULT KEY = %s" %key )
+            print("\n\nRESULT KEY = %s" %key )
+            print("\nDictionary of commits that matched your keyword:")
             print(matched_commits)
-            print("Step 3: Now you can analyze your commit changes\nType: analyze <repo_number> <RESULT KEY>\nthis will produce analyzed udb files)
+            print("\nInstruction:\nStep 3: Now you can analyze your commit changes\nType: analyze <repo_number> <RESULT KEY>\n**this will produce analyzed udb files**")
             return
         else:
             print("repo not located, please redo step 1")
@@ -89,8 +90,9 @@ class MyPrompt(Cmd):
             create_udb(file_prefix)
 
             print("SECOND UDB CREATED")
+            print("\n\nCOMMIT_DICT:")
             print(file_prefix_dict)
-            print("\nStep 4: Next step is to view the parameter changes on all functions and methods.\n TYPE: compare <index of dictionary item (commit) to compare>\n ")
+            print("\n\nInstruction\nStep 4: Next step is to view the parameter changes on all functions and methods.\n TYPE: compare <index (nonzero-based..i.e. <1> is the first index) of COMMIT_DICT key (commit message) to compare>\n ")
             # if count == 1:
             #     break
 
@@ -173,7 +175,7 @@ def get_repos():
         repo_objects.append(repo)
         count+=1
         print(str(count)+"->"+repo.name)
-        print("Instruction:\nType: choose <repo_number>\nthis will clone the repo locally or tell you it's already cloned")
+    print("\nInstruction:\nType: choose <repo_number>\n**this will clone the repo locally or tell you it's already cloned**")
 
 
 def clone_repos(index):
@@ -182,13 +184,13 @@ def clone_repos(index):
     checkdir = Path("./projects/%s" % repo.name)
     if validate_cloned(repo):
         print("%s already cloned" %repo.name)
-        print('Step2: search the commit metadata\nType: search <repo_number> <inLine keyword>')
+        print('\nInstruction:\nStep2: search the commit metadata\nType: search <repo_number> <inLine keyword>')
         return
     else:
         print("cloning %s" %repo.name)
         Repo.clone_from(repo.html_url, "./projects/%s" % repo.name)
         print('done cloning %s' %repo.name)
-        print('Step2: search the commit metadata\nType: search <repo_number> <inLine keyword>')
+        print('\nInstruction:\nStep2: search the commit metadata\nType: search <repo_number> <inLine keyword>')
         return
 
     #find issue-related commits

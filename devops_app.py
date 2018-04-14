@@ -19,7 +19,7 @@ repo_objects = list()
 #commit_list contains commit sets for each query of repo
 #user required to use repo number and random key to access commit_list data
 #user can store many query results for different repos in this dictionary for each session
-commit_lists = {}
+matched_list_dict = {}
 
 
 class MyPrompt(Cmd):
@@ -43,7 +43,7 @@ class MyPrompt(Cmd):
             matched_commits = search_commits(repo_objects[arg0-1], args[1])
             key = randint(100, 1000)
             #commit_list contains commit sets for each query of repo
-            commit_lists[key] = matched_commits
+            matched_list_dict[key] = matched_commits
             print("\n\nRESULT KEY = %s" %key )
             print("\nDictionary of commits that matched your keyword:")
             print(matched_commits)
@@ -54,66 +54,117 @@ class MyPrompt(Cmd):
             return
 
     def do_analyze(self, args):
-        count = 0
-        #arg[0] = requested index
+        #arg[0] = requested repo index
         #analyze matched commit logs
         args = args.split(" ")
         #get requested repo args[0]
         repo = repo_objects[int(args[0])-1]
         #get requested repo commits key args[1]
-        commits = commit_lists[int(args[1])]
+        #commits is a dictionary of key=message value=commit_tuple
+        commits = matched_list_dict[int(args[1])]
+        requested_commit_message_list = list(commits.keys())
+        commit_message = requested_commit_message_list[int(args[2])-1]
+
         if commits == None:
             print("no commits matched your search... try search step again")
             return
-        for commit_pair in commits:
-            count+=1
-            pair = commits[commit_pair]
-            #parent of matched commit
-            before = pair[1]
-            #matched commit
-            after = pair[0]
-            file_prefix = repo.name
-            file_prefix = file_prefix+str(count)
-            file_prefix_dict[commit_pair] = ('./projects/%sbefore.udb'%file_prefix, './projects/%safter.udb'%file_prefix)
 
-            f = open('%s.sh' %file_prefix,'w' )
-            f.write('cd projects\ncd %s\ngit checkout %s\nund create -languages java ../%sbefore.udb\nund add -lang java ./ ../%sbefore.udb\nund analyze ../%sbefore.udb\n' %(repo.name, before, file_prefix, file_prefix, file_prefix))
-            f.close()
-            create_udb(file_prefix)
-            #need to remove .sh file
+        list_of_commit_pairs = list(commits.values())
+        requested_pair_to_analyze = list_of_commit_pairs[int(args[2])-1]
+        #parent of matched commit
+        before = requested_pair_to_analyze[1]
+        #matched commit
+        after = requested_pair_to_analyze[0]
+        file_prefix = repo.name
+        file_prefix = file_prefix+str(randint(1000, 10000))
+        file_prefix_dict[commit_message] = ('./projects/%sbefore.udb'%file_prefix, './projects/%safter.udb'%file_prefix)
 
-            print("FIRST UDB CREATED")
+        f = open('%s.sh' %file_prefix,'w' )
+        f.write('cd projects\ncd %s\ngit checkout %s\nund create -languages java ../%sbefore.udb\nund add -watch off -lang java ./ ../%sbefore.udb\nund analyze -quiet ../%sbefore.udb' %(repo.name, before, file_prefix, file_prefix, file_prefix))
+        f.close()
+        create_udb(file_prefix)
+        #need to remove .sh file
 
-            f = open('%s.sh' %file_prefix,'w' )
-            f.write('cd projects\n cd %s\ngit checkout %s\nund create -languages java ../%safter.udb\nund add -lang java ./ ../%safter.udb\nund analyze ../%safter.udb' %(repo.name, after, file_prefix, file_prefix, file_prefix))
-            f.close()
-            create_udb(file_prefix)
+        print("FIRST UDB CREATED")
 
-            print("SECOND UDB CREATED")
-            print("\n\nCOMMIT_DICT:")
-            print(file_prefix_dict)
-            print("\n\nInstruction\nStep 4: Next step is to view the parameter changes on all functions and methods.\n TYPE: compare <index (nonzero-based..i.e. <1> is the first index) of COMMIT_DICT key (commit message) to compare>\n ")
-            if count == 1:
-                break
+        f = open('%s.sh' %file_prefix,'w' )
+        f.write('cd projects\n cd %s\ngit checkout %s\nund create -languages java ../%safter.udb\nund add -watch off -lang java ./ ../%safter.udb\nund analyze -quiet ../%safter.udb' %(repo.name, after, file_prefix, file_prefix, file_prefix))
+        f.close()
+        create_udb(file_prefix)
+
+        print("SECOND UDB CREATED")
+        print("\n\nCOMMIT_DICT:")
+        print(file_prefix_dict)
+        print("\n\nInstruction\nStep 4: Next step is to view the parameter changes on all functions and methods.\n TYPE: compare <index (nonzero-based..i.e. <1> is the first index) of COMMIT_DICT key (commit message) to compare>\n ")
 
 
-    def do_compare(self, index):
-        file_paths = list(file_prefix_dict.values())
-        udb_before = file_paths[int(index)-1][0]
-        udb_after = file_paths[int(index)-1][1]
-        compare_udbs(udb_before, udb_after)
-        print("your comparison xml file (parameterChange.xml) is now available in your current directory\n\nYou may restart the process from step 1 if you want more analyses")
+        # for commit_pair in commits:
+        #     count+=1
+        #     pair = commits[commit_pair]
+        #     #parent of matched commit
+        #     before = pair[1]
+        #     #matched commit
+        #     after = pair[0]
+        #     file_prefix = repo.name
+        #     file_prefix = file_prefix+str(count)
+        #     file_prefix_dict[commit_pair] = ('./projects/%sbefore.udb'%file_prefix, './projects/%safter.udb'%file_prefix)
+        #
+        #     f = open('%s.sh' %file_prefix,'w' )
+        #     f.write('cd projects\ncd %s\ngit checkout %s\nund create -languages java ../%sbefore.udb\nund add -lang java ./ ../%sbefore.udb\nund analyze ../%sbefore.udb\n' %(repo.name, before, file_prefix, file_prefix, file_prefix))
+        #     f.close()
+        #     create_udb(file_prefix)
+        #     #need to remove .sh file
+        #
+        #     print("FIRST UDB CREATED")
+        #
+        #     f = open('%s.sh' %file_prefix,'w' )
+        #     f.write('cd projects\n cd %s\ngit checkout %s\nund create -languages java ../%safter.udb\nund add -lang java ./ ../%safter.udb\nund analyze ../%safter.udb' %(repo.name, after, file_prefix, file_prefix, file_prefix))
+        #     f.close()
+        #     create_udb(file_prefix)
+        #
+        #     print("SECOND UDB CREATED")
+        #     print("\n\nCOMMIT_DICT:")
+        #     print(file_prefix_dict)
+        #     print("\n\nInstruction\nStep 4: Next step is to view the parameter changes on all functions and methods.\n TYPE: compare <index (nonzero-based..i.e. <1> is the first index) of COMMIT_DICT key (commit message) to compare>\n ")
+        #     if count == 1:
+        #         break
+        #
+
+    def do_compare(self, args):
+        #args are either metrics or parameters, with metrics taking a csvList as a thrid parameter
+        count = 0
+        args = args.split(" ")
+        arg0 = args[0]
+        file_paths_list = list(file_prefix_dict.values())
+        if arg0 == '-metrics':
+            # arg1 = args[1].split(",")
+            for single_pairOfCommitsPaths in file_paths_list:
+                compare_metrics(single_pairOfCommitsPaths, args[1])
+                print("your comparison xml files (metrics<num>.xml) are now available in your current directory\n\nYou may restart the process from step 1 if you want more analyses")
+            return
+
+        elif arg0 == '-parameters':
+            for single_pairOfCommitsPaths in file_paths_list:
+                count+=1
+                compare_parameters(single_pairOfCommitsPaths[0], single_pairOfCommitsPaths[1], count)
+                print("your comparison xml files (parameters<num>.xml) are now available in your current directory\n\nYou may restart the process from step 1 if you want more analyses")
+            return
+
+
 
     def do_quit(self, args):
         """Quits the program."""
         print ("Quitting.")
         raise SystemExit
 
+# def compare_metrics():
+    #call
+
 #algo here:
 def sortKeyFunc(ent):
     return str.lower(ent.longname())
 
-def compare_udbs(udb_before, udb_after):
+def compare_parameters(udb_before, udb_after, count):
     # Open Database
     dbBefore = understand.open(udb_before)
     dbAfter = understand.open(udb_after)
@@ -143,7 +194,7 @@ def compare_udbs(udb_before, udb_after):
                   parameter = etree.SubElement(change, "parameter", oldtype = paramB.type(), newtype = paramA.type()).text = str(paramB)
 
     tree = etree.ElementTree(root)
-    tree.write("parameterChange.xml")
+    tree.write("parameter%s.xml"%count)
 
     dbBefore.close()
     dbAfter.close()
@@ -197,7 +248,7 @@ def clone_repos(index):
 
 def search_commits(repo, keyword):
     commitMatchDict = {}
-    pdb.set_trace()
+    # pdb.set_trace()
     commits = repo.get_commits()
     for commit in commits:
         message = commit.commit.message

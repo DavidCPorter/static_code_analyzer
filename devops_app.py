@@ -189,8 +189,7 @@ def compare_function_metrics (udb_before, udb_after):
             metrics_after = j.metric(complexity_metrics)
             k = 0
             for metrics_element in metrics_before:
-              if metrics_element is not None:
-                 if metrics_after[complexity_metrics[k]] - metrics_before[complexity_metrics[k]] != 0 :
+              if metrics_before[complexity_metrics[k]] is not None:
                      method = etree.SubElement(doc,"method", name = str(i))
                      change = etree.SubElement(method,"change")
                      parameter = etree.SubElement(change, complexity_metrics[k], before = str(metrics_before[complexity_metrics[k]]), after = str(metrics_after[complexity_metrics[k]])).text = str(metrics_after[complexity_metrics[k]] - metrics_before[complexity_metrics[k]])

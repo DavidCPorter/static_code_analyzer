@@ -95,7 +95,7 @@ class MyPrompt(Cmd):
         print("SECOND UDB CREATED")
         print("\n\nCOMMIT_DICT:")
         print(file_prefix_dict)
-        print("\n\nInstruction\nStep 4: Next step is to view the parameter changes on all functions and methods.\n TYPE: compare <index (nonzero-based..i.e. <1> is the first index) of COMMIT_DICT key (commit message) to compare>\n ")
+        print("\n\nInstruction\nStep 4: Next step is to view the parameter changes on all functions and methods.\n TYPE: compare -metrics or compare -parameters\n ")
 
 
 
@@ -167,7 +167,7 @@ def compare_parameters(udb_before, udb_after, count):
     dbAfter.close()
 
 
-def compare_function_metrics (udb_before, udb_after):
+def compare_function_metrics(udb_before, udb_after):
     # Open Database
     dbBefore = understand.open(udb_before)
     dbAfter = understand.open(udb_after)
@@ -252,7 +252,6 @@ def clone_repos(index):
         print('\nInstruction:\nStep2: search the commit metadata\nType: search <repo_number> <inLine keyword>')
         return
 
-    #find issue-related commits
 
 def search_commits(repo, keyword):
     commitMatchDict = {}
@@ -267,18 +266,6 @@ def search_commits(repo, keyword):
 
     return commitMatchDict
 
-
-    #
-    # for
-    #
-    # db = understand.open("./understand/%s.udb" % name)
-    #
-    # entities = db.ents()
-    # import pdb
-    # pdb.set_trace()
-
-# print characteristics of unsorted entities
-    # export PATH=$PATH:/Applications/Understand.app/scitools/bin/macosx/
 
 
 

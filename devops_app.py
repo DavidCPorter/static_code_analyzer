@@ -226,6 +226,8 @@ def validate_cloned(repo):
 def get_repos():
 
     # Access Token
+    #API token for garbage github account w/ example repos required to run this app
+    #you can add your own token here to analyze your own repos
     mygithub = Github("d566ce209207556c3dcedb2eff139a63c5cd8a9e")
 
     the_query = {}
